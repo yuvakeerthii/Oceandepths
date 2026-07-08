@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ocean Depths — A Cinematic Descent</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Outfit:wght@200;300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:#000;color:#c8dde8;font-family:'Outfit',sans-serif;overflow-x:hidden;cursor:none}
+
+/* CURSOR */
+#cur{position:fixed;width:8px;height:8px;background:#00d4ff;border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:screen}
+#cur2{position:fixed;width:32px;height:32px;border:1px solid rgba(0,212,255,.28);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%)}
+
+/* LOADER */
+#loader{position:fixed;inset:0;z-index:10000;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;transition:opacity .9s}
+#loader.out{opacity:0;pointer-events:none}
+.ld-fish{font-size:3rem;animation:ldsway .9s ease-in-out infinite alternate;filter:drop-shadow(0 0 12px rgba(0,212,255,.4))}
+@keyframes ldsway{from{transform:translateY(-8px) rotate(-6deg)}to{transform:translateY(8px) rotate(6deg)}}
+.ld-title{font-family:'Playfair Display',serif;font-size:clamp(2rem,7vw,4.5rem);font-weight:900;color:#fff;overflow:hidden;text-align:center}
+.ld-title span{display:block;animation:ldup .8s cubic-bezier(.16,1,.3,1) .2s both}
+@keyframes ldup{from{transform:translateY(110%)}to{transform:translateY(0)}}
+.ld-sub{font-size:.6rem;letter-spacing:.4em;color:rgba(0,212,255,.4);animation:ldfade .7s ease 1s both}
+@keyframes ldfade{to{opacity:1}from{opacity:0}}
+.ld-bar{width:180px;height:1px;background:rgba(255,255,255,.06)}
+.ld-fill{height:100%;background:linear-gradient(90deg,#001a3d,#00d4ff);width:0;transition:width 2.2s cubic-bezier(.4,0,.2,1)}
+
+/* PROGRESS */
+#pbar{position:fixed;top:0;left:0;height:2px;background:rgba(0,212,255,.6);z-index:500;width:0;box-shadow:0 0 8px rgba(0,212,255,.4)}
+
+/* HUD */
+#hud{position:fixed;right:2rem;top:50%;transform:translateY(-50%);z-index:200;text-align:right;pointer-events:none}
+.hud-d{font-family:'Playfair Display',serif;font-size:2.8rem;font-weight:700;color:#00d4ff;line-height:1;text-shadow:0 0 20px rgba(0,212,255,.3)}
+.hud-u{font-size:.5rem;letter-spacing:.25em;color:rgba(0,212,255,.3);margin-top:.2rem}
+.hud-sep{width:1px;height:45px;background:linear-gradient(to bottom,transparent,rgba(0,212,255,.18));margin:.6rem 0 .6rem auto}
+.hud-z{font-size:.48rem;letter-spacing:.16em;color:rgba(255,255,255,.18)}
+.hud-t{font-size:.55rem;color:rgba(0,212,255,.35);margin-top:.4rem}
+
+/* NAV */
+#nav{position:fixed;left:2rem;top:50%;transform:translateY(-50%);z-index:200;display:flex;flex-direction:column;gap:1.4rem}
+.dot{width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.15);cursor:pointer;transition:all .4s;position:relative}
+.dot.on{background:#00d4ff;box-shadow:0 0 6px #00d4ff;height:18px;border-radius:3px}
+.dot::after{content:attr(data-l);position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:.5rem;letter-spacing:.1em;color:rgba(255,255,255,.28);white-space:nowrap;opacity:0;transition:opacity .2s}
+.dot:hover::after{opacity:1}
+
+/* LETTERBOX */
+.lb{position:fixed;left:0;right:0;z-index:150;pointer-events:none;background:#000}
+#lbt{top:0;height:48px}
+#lbb{bottom:0;height:48px}
+
+/* SCROLL HINT */
+#hint{position:fixed;bottom:3rem;left:50%;transform:translateX(-50%);z-index:200;text-align:center;animation:hshow 5s ease 3s both}
+@keyframes hshow{0%,100%{opacity:0}20%,80%{opacity:1}}
+#hint p{font-size:.52rem;letter-spacing:.28em;color:rgba(0,212,255,.28);margin-bottom:.5rem;text-transform:uppercase}
+.hb{width:1px;height:28px;background:linear-gradient(to bottom,transparent,rgba(0,212,255,.6));margin:0 auto;animation:hbp 1.5s ease-in-out infinite}
+@keyframes hbp{0%,100%{opacity:.2}50%{opacity:1}}
+
+/* SECTIONS */
+section{position:relative;min-height:100vh;overflow:hidden;display:flex;align-items:center;justify-content:center}
+
+/* Zone backgrounds — dark, moody, cinematic */
+#s0{background:linear-gradient(180deg,#001830 0%,#002244 40%,#001a38 100%)}
+#s1{background:linear-gradient(180deg,#001228 0%,#000e20 60%,#000818 100%)}
+#s2{background:linear-gradient(180deg,#08001a 0%,#050010 50%,#030008 100%)}
+#s3{background:linear-gradient(180deg,#010006 0%,#000003 50%,#000001 100%)}
+#s4{background:#000}
+
+/* CONTENT */
+.zc{position:relative;z-index:20;text-align:center;padding:7rem 2rem;max-width:680px;width:100%}
+.chip{display:inline-block;font-size:.58rem;letter-spacing:.28em;color:rgba(0,212,255,.5);border:1px solid rgba(0,212,255,.1);border-radius:100px;padding:.3rem 1.1rem;background:rgba(0,0,0,.4);backdrop-filter:blur(12px);margin-bottom:2rem;opacity:0;transform:translateY(-8px);transition:opacity .6s,transform .6s}
+.chip.on{opacity:1;transform:translateY(0)}
+.zt{font-family:'Playfair Display',serif;font-size:clamp(3.5rem,9vw,8rem);font-weight:900;line-height:.9;margin-bottom:1.8rem;overflow:hidden}
+.zt .ln{display:block;transform:translateY(106%);transition:transform 1s cubic-bezier(.16,1,.3,1)}
+.zt .ln.on{transform:translateY(0)}
+.zt em{font-style:italic;color:#00d4ff}
+.zt .gl{color:#00ffb0}
+.zt .or{color:rgba(255,107,43,.9)}
+.dv{width:36px;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,.5),transparent);margin:0 auto 1.8rem;opacity:0;transition:opacity .5s .2s}
+.dv.on{opacity:1}
+.zb{font-size:clamp(.85rem,1.4vw,1rem);line-height:1.95;color:rgba(200,220,235,.42);max-width:480px;margin:0 auto;font-weight:200;opacity:0;transform:translateY(12px);transition:opacity .9s .35s,transform .9s .35s}
+.zb.on{opacity:1;transform:translateY(0)}
+.sr{display:flex;gap:2.5rem;justify-content:center;flex-wrap:wrap;margin-top:2.5rem;opacity:0;transform:translateY(10px);transition:opacity .7s .5s,transform .7s .5s}
+.sr.on{opacity:1;transform:translateY(0)}
+.si .n{font-family:'Playfair Display',serif;font-size:3rem;font-weight:700;color:rgba(0,212,255,.85);line-height:1}
+.si .l{font-size:.5rem;letter-spacing:.16em;color:rgba(200,220,235,.28);margin-top:.2rem}
+.pring{width:110px;height:110px;border-radius:50%;border:1px solid rgba(0,212,255,.18);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 2rem;animation:pr 3s ease-in-out infinite}
+@keyframes pr{0%,100%{box-shadow:0 0 0 0 rgba(0,212,255,0)}50%{box-shadow:0 0 0 16px rgba(0,212,255,.04)}}
+.pring .pn{font-family:'Playfair Display',serif;font-size:1.7rem;font-weight:700;color:#00d4ff;line-height:1}
+.pring .pl{font-size:.48rem;letter-spacing:.14em;color:rgba(0,212,255,.35)}
+.fnote{margin-top:3rem;font-size:.5rem;letter-spacing:.22em;color:rgba(0,212,255,.15);text-transform:uppercase}
+
+/* ══════════════════════════════
+   CREATURE ANIMATIONS - PREMIUM
+   Semi-transparent, glowing, moody
+══════════════════════════════ */
+
+/* Premium swim - creatures emerge from dark */
+.cfish{position:absolute;pointer-events:none}
+.cfish.goright{animation:swimright linear infinite}
+.cfish.goleft{animation:swimleft linear infinite}
+@keyframes swimright{from{transform:translateX(-20vw)}to{transform:translateX(115vw)}}
+@keyframes swimleft{from{transform:translateX(115vw) scaleX(-1)}to{transform:translateX(-20vw) scaleX(-1)}}
+
+/* Gentle bob - premium, not bouncy */
+.fishbob{animation:gentlebob ease-in-out infinite}
+@keyframes gentlebob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+
+/* Tail gentle sway */
+.fishtail{animation:tailsway ease-in-out infinite;transform-origin:right center}
+@keyframes tailsway{0%,100%{transform:rotate(-12deg)}50%{transform:rotate(12deg)}}
+
+/* Fin */
+.fishfin{animation:finwave ease-in-out infinite;transform-origin:50% 0}
+@keyframes finwave{0%,100%{transform:skewX(-6deg)}50%{transform:skewX(6deg)}}
+
+/* Flipper */
+@keyframes flipwave{0%,100%{transform:rotate(-20deg)}50%{transform:rotate(12deg)}}
+
+/* Bubbles */
+.bub{position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.2);animation:bubup linear infinite;bottom:-30px;background:rgba(255,255,255,.03)}
+@keyframes bubup{0%{transform:translateY(0);opacity:.5}50%{transform:translateY(-50vh) translateX(8px);opacity:.25}100%{transform:translateY(-108vh) translateX(-6px);opacity:0}}
+
+/* Seaweed */
+@keyframes seaweed{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+
+/* Sun rays - softer */
+.sray{position:absolute;top:0;background:linear-gradient(to bottom,rgba(255,240,180,.18),rgba(255,220,120,.06),transparent);animation:raysway ease-in-out infinite alternate;transform-origin:top center}
+@keyframes raysway{from{transform:skewX(-4deg) scaleX(.82);opacity:.25}to{transform:skewX(4deg) scaleX(1.18);opacity:.5}}
+
+/* Caustic light - subtle */
+.cring{position:absolute;border-radius:50%;border:1px solid rgba(255,235,180,.45);animation:cringspin ease-in-out infinite}
+@keyframes cringspin{0%,100%{transform:scale(1);opacity:.25}50%{transform:scale(1.5) translate(6px,-3px);opacity:.07}}
+
+/* Jellyfish - moody glow */
+.jdrift{position:absolute;pointer-events:none;animation:jelly ease-in-out infinite}
+@keyframes jelly{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-25px) rotate(3deg)}}
+.jbody{animation:jbeat ease-in-out infinite alternate}
+@keyframes jbeat{from{transform:scaleY(1) scaleX(1)}to{transform:scaleY(.78) scaleX(1.12)}}
+
+/* Angler lure glow */
+.alure{animation:aglow ease-in-out infinite}
+@keyframes aglow{0%,100%{filter:drop-shadow(0 0 5px #00ff88) drop-shadow(0 0 10px #00ff88);opacity:.6}50%{filter:drop-shadow(0 0 16px #00ff88) drop-shadow(0 0 30px #00ff88) drop-shadow(0 0 50px rgba(0,255,136,.3));opacity:1}}
+.astalk{animation:astalkway ease-in-out infinite;transform-origin:bottom center}
+@keyframes astalkway{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(10deg)}}
+
+/* Biolum */
+.biod{position:absolute;border-radius:50%;animation:bipulse ease-in-out infinite}
+@keyframes bipulse{0%,100%{opacity:.06;transform:scale(1)}50%{opacity:.9;transform:scale(1.9)}}
+
+/* Waves */
+.wsvg{position:absolute;bottom:0;width:200%;animation:wroll linear infinite}
+@keyframes wroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* Turtle bob */
+.turtlebody{animation:gentlebob 3.5s ease-in-out infinite}
+
+/* Snailfish */
+@keyframes snailbob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-14px)}}
+
+/* Deep particle */
+.deeppx{position:absolute;border-radius:50%;animation:dpx linear infinite}
+@keyframes dpx{from{transform:translateY(0);opacity:.4}to{transform:translateY(-100vh);opacity:0}}
+
+/* Vignette overlay on each section for depth/cinema feel */
+section::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 30%,rgba(0,0,0,.55) 100%);pointer-events:none;z-index:15}
+
+/* RESPONSIVE */
+@media(max-width:768px){#hud{right:.8rem}#nav{left:.6rem}.zt{font-size:clamp(2.8rem,10vw,5rem)}.si .n{font-size:2.4rem}#lbt,#lbb{height:36px}}
+@media(max-width:480px){#hud{display:none}}
+</style>
+</head>
+<body>
+
+<!-- Loader -->
+<div id="loader">
+  <div class="ld-fish">🐠</div>
+  <div class="ld-title"><span>OCEAN DEPTHS</span></div>
+  <div class="ld-sub">A Pixar-Style Descent</div>
+  <div class="ld-bar"><div class="ld-fill" id="ldfill"></div></div>
+</div>
+
+<!-- Cursor -->
+<div id="cur"></div>
+<div id="cur2"></div>
+
+<!-- Progress -->
+<div id="pbar"></div>
+
+<!-- Letterbox -->
+<div class="lb" id="lbt"></div>
+<div class="lb" id="lbb"></div>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="hud-d" id="hd">0</div>
+  <div class="hud-u">METRES DEEP</div>
+  <div class="hud-sep"></div>
+  <div class="hud-z" id="hz">Surface</div>
+  <div class="hud-t" id="ht">20°C</div>
+</div>
+
+<!-- Nav -->
+<nav id="nav">
+  <div class="dot on" data-i="0" data-l="Surface"></div>
+  <div class="dot" data-i="1" data-l="Sunlight Zone"></div>
+  <div class="dot" data-i="2" data-l="Twilight Zone"></div>
+  <div class="dot" data-i="3" data-l="Midnight Zone"></div>
+  <div class="dot" data-i="4" data-l="Hadal Zone"></div>
+</nav>
+
+<!-- Scroll hint -->
+<div id="hint"><p>Scroll to dive deeper</p><div class="hb"></div></div>
+
+<!-- ══════════════════════════════
+     ZONE 1: SURFACE
+══════════════════════════════ -->
+<section id="s0">
+  <!-- sun rays -->
+  <div id="rays0" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:2"></div>
+  <!-- caustic rings -->
+  <div id="cau0" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:2;opacity:.22"></div>
+  <!-- fish layer -->
+  <div id="fish0" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:8"></div>
+  <!-- turtle -->
+  <div id="turtle0" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:7"></div>
+  <!-- bubbles -->
+  <div id="bubs0" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:6"></div>
+
+  <!-- CORAL SEABED -->
+  <div style="position:absolute;bottom:0;left:0;right:0;pointer-events:none;z-index:9;overflow:hidden;height:210px">
+    <svg width="100%" height="210" viewBox="0 0 1440 210" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+      <!-- sand -->
+      <path d="M0,165 Q360,148 720,158 Q1080,168 1440,152 L1440,210 L0,210Z" fill="#c8a84b" opacity=".45"/>
+      <path d="M0,178 Q500,165 900,174 Q1200,182 1440,168 L1440,210 L0,210Z" fill="#a07830" opacity=".35"/>
+      <!-- CORAL 1 - big orange left -->
+      <g transform="translate(65,210) scale(1,-1)" filter="url(#shadow)">
+        <line x1="0" y1="0" x2="0" y2="72" stroke="#1a0a00" stroke-width="6" stroke-linecap="round"/>
+        <line x1="0" y1="0" x2="0" y2="72" stroke="#ff6b2b" stroke-width="4" stroke-linecap="round"/>
+        <line x1="0" y1="72" x2="-26" y2="42" stroke="#1a0a00" stroke-width="5" stroke-linecap="round"/>
+        <line x1="0" y1="72" x2="-26" y2="42" stroke="#ff6b2b" stroke-width="3.5" stroke-linecap="round"/>
+        <line x1="0" y1="72" x2="26" y2="36" stroke="#1a0a00" stroke-width="5" stroke-linecap="round"/>
+        <line x1="0" y1="72" x2="26" y2="36" stroke="#ff8c42" stroke-width="3.5" stroke-linecap="round"/>
+        <line x1="0" y1="72" x2="-12" y2="58" stroke="#ff6b2b" stroke-width="3" stroke-linecap="round"/>
+        <line x1="0" y1="72" x2="16" y2="55" stroke="#ff8c42" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="-26" cy="42" r="13" fill="#1a0a00"/><circle cx="-26" cy="42" r="11" fill="#ff6b2b"/>
+        <circle cx="26" cy="36" r="12" fill="#1a0a00"/><circle cx="26" cy="36" r="10" fill="#ff8c42"/>
+        <circle cx="-12" cy="58" r="9" fill="#1a0a00"/><circle cx="-12" cy="58" r="7" fill="#ff6b2b"/>
+        <circle cx="16" cy="55" r="9" fill="#1a0a00"/><circle cx="16" cy="55" r="7" fill="#ffaa55"/>
+      </g>
+      <!-- SEAWEED with outline -->
+      <g style="transform-origin:195px 210px;animation:seaweed 4s ease-in-out infinite">
+        <path d="M195,210 Q182,172 195,135 Q208,98 193,65" stroke="#0a1a08" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <path d="M195,210 Q182,172 195,135 Q208,98 193,65" stroke="#2d8a4e" stroke-width="5" fill="none" stroke-linecap="round"/>
+      </g>
+      <g style="transform-origin:232px 210px;animation:seaweed 3.5s ease-in-out infinite reverse">
+        <path d="M232,210 Q246,175 230,140 Q216,108 233,78" stroke="#0a1a08" stroke-width="6" fill="none" stroke-linecap="round"/>
+        <path d="M232,210 Q246,175 230,140 Q216,108 233,78" stroke="#3aad63" stroke-width="4" fill="none" stroke-linecap="round"/>
+      </g>
+      <!-- CORAL 2 - pink centre -->
+      <g transform="translate(720,210) scale(1,-1)">
+        <line x1="0" y1="0" x2="0" y2="62" stroke="#1a0010" stroke-width="5.5" stroke-linecap="round"/>
+        <line x1="0" y1="0" x2="0" y2="62" stroke="#ff69b4" stroke-width="3.5" stroke-linecap="round"/>
+        <line x1="0" y1="62" x2="-22" y2="35" stroke="#1a0010" stroke-width="5" stroke-linecap="round"/>
+        <line x1="0" y1="62" x2="-22" y2="35" stroke="#ff69b4" stroke-width="3" stroke-linecap="round"/>
+        <line x1="0" y1="62" x2="22" y2="30" stroke="#1a0010" stroke-width="5" stroke-linecap="round"/>
+        <line x1="0" y1="62" x2="22" y2="30" stroke="#ff1493" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="-22" cy="35" r="11" fill="#1a0010"/><circle cx="-22" cy="35" r="9" fill="#ff69b4"/>
+        <circle cx="22" cy="30" r="10" fill="#1a0010"/><circle cx="22" cy="30" r="8" fill="#ff1493"/>
+      </g>
+      <!-- STARFISH with outline -->
+      <g transform="translate(510,190)">
+        <path d="M0,-17 L4,-5 L17,-5 L7,3 L11,17 L0,10 L-11,17 L-7,3 L-17,-5 L-4,-5Z" fill="#1a0800"/>
+        <path d="M0,-15 L3.5,-4 L14,-4 L6,3 L9,14 L0,8 L-9,14 L-6,3 L-14,-4 L-3.5,-4Z" fill="#ff6347"/>
+        <circle cx="0" cy="0" r="4" fill="#ff8c42"/>
+      </g>
+      <!-- SEAWEED right -->
+      <g style="transform-origin:1148px 210px;animation:seaweed 4.5s ease-in-out infinite">
+        <path d="M1148,210 Q1134,168 1148,130 Q1162,92 1145,62" stroke="#0a1a08" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <path d="M1148,210 Q1134,168 1148,130 Q1162,92 1145,62" stroke="#2d8a4e" stroke-width="5" fill="none" stroke-linecap="round"/>
+      </g>
+      <!-- CORAL 3 - purple right -->
+      <g transform="translate(1355,210) scale(1,-1)">
+        <line x1="0" y1="0" x2="0" y2="75" stroke="#0a0020" stroke-width="6" stroke-linecap="round"/>
+        <line x1="0" y1="0" x2="0" y2="75" stroke="#9b5de5" stroke-width="4" stroke-linecap="round"/>
+        <line x1="0" y1="75" x2="-28" y2="44" stroke="#0a0020" stroke-width="5.5" stroke-linecap="round"/>
+        <line x1="0" y1="75" x2="-28" y2="44" stroke="#9b5de5" stroke-width="3.5" stroke-linecap="round"/>
+        <line x1="0" y1="75" x2="28" y2="38" stroke="#0a0020" stroke-width="5.5" stroke-linecap="round"/>
+        <line x1="0" y1="75" x2="28" y2="38" stroke="#c084fc" stroke-width="3.5" stroke-linecap="round"/>
+        <line x1="0" y1="75" x2="-14" y2="62" stroke="#9b5de5" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="-28" cy="44" r="13" fill="#0a0020"/><circle cx="-28" cy="44" r="11" fill="#9b5de5"/>
+        <circle cx="28" cy="38" r="12" fill="#0a0020"/><circle cx="28" cy="38" r="10" fill="#c084fc"/>
+        <circle cx="-14" cy="62" r="9" fill="#0a0020"/><circle cx="-14" cy="62" r="7" fill="#9b5de5"/>
+      </g>
+      <!-- ANEMONE -->
+      <g transform="translate(900,205)">
+        <ellipse cx="0" cy="0" rx="22" ry="8" fill="#cc3300" stroke="#1a0a00" stroke-width="1.5"/>
+        <ellipse cx="-8" cy="-10" rx="5" ry="10" fill="#ff4400" stroke="#1a0a00" stroke-width="1" transform="rotate(-15,-8,-10)"/>
+        <ellipse cx="0" cy="-12" rx="5" ry="10" fill="#ff6600" stroke="#1a0a00" stroke-width="1"/>
+        <ellipse cx="8" cy="-10" rx="5" ry="10" fill="#ff4400" stroke="#1a0a00" stroke-width="1" transform="rotate(15,8,-10)"/>
+      </g>
+    </svg>
+  </div>
+
+  <!-- WAVES -->
+  <div style="position:absolute;bottom:0;left:0;right:0;height:80px;pointer-events:none;z-index:10;overflow:hidden">
+    <svg class="wsvg" style="animation-duration:9s" viewBox="0 0 1440 80" xmlns="http://www.w3.org/2000/svg"><path d="M0,36 C360,72 720,4 1080,36 C1260,54 1395,14 1440,34L1440,80L0,80Z" fill="rgba(0,20,60,.75)"/></svg>
+    <svg class="wsvg" style="animation-duration:14s;animation-delay:-6s;position:absolute;bottom:0" viewBox="0 0 1440 80" xmlns="http://www.w3.org/2000/svg"><path d="M0,50 C400,12 800,66 1200,24 C1325,8 1405,48 1440,38L1440,80L0,80Z" fill="rgba(0,10,45,.6)"/></svg>
+  </div>
+
+  <div class="zc">
+    <div class="chip">0 — 20m &nbsp;·&nbsp; The Ocean Surface</div>
+    <h1 class="zt">
+      <span class="ln">Where <em>Sky</em></span>
+      <span class="ln">Becomes <em>Sea</em></span>
+    </h1>
+    <div class="dv"></div>
+    <p class="zb">The ocean begins where sky surrenders to water. Sunlight fractures into cathedral rays, flooding a world bursting with colour and life. 71% of our planet hides beneath this restless mirror — most of it still unseen.</p>
+    <div class="sr">
+      <div class="si"><div class="n">71%</div><div class="l">Earth covered</div></div>
+      <div class="si"><div class="n">20°C</div><div class="l">Surface temp</div></div>
+      <div class="si"><div class="n">3.7km</div><div class="l">Average depth</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════
+     ZONE 2: SUNLIGHT ZONE
+══════════════════════════════ -->
+<section id="s1">
+  <div id="fish1" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:8"></div>
+  <div id="bubs1" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:6"></div>
+
+  <!-- FREE WHALE -->
+  <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:8">
+    <div class="cfish goright" style="animation-duration:45s;animation-delay:-10s;top:12%;opacity:.8;filter:drop-shadow(0 0 18px rgba(0,100,200,.4))">
+      <div class="fishbob" style="animation-duration:4s">
+        <svg width="300" height="110" viewBox="0 0 300 110" xmlns="http://www.w3.org/2000/svg">
+          <g class="fishtail" style="transform-origin:16px 55px"><path d="M16,55 Q2,36 8,55 Q2,74 16,55Z" fill="#111"/><path d="M17,55 Q5,38 11,55 Q5,72 17,55Z" fill="#1565c0"/></g>
+          <ellipse cx="162" cy="55" rx="142" ry="44" fill="#111"/>
+          <ellipse cx="162" cy="55" rx="139" ry="41" fill="#1565c0"/>
+          <ellipse cx="148" cy="74" rx="88" ry="20" fill="#90caf9" opacity=".28"/>
+          <circle cx="85" cy="40" r="5" fill="#111"/><circle cx="85" cy="40" r="3.5" fill="#0d47a1"/>
+          <circle cx="108" cy="32" r="4" fill="#111"/><circle cx="108" cy="32" r="3" fill="#0d47a1"/>
+          <path d="M138,12 Q158,0 180,12" fill="#111" stroke="#111" stroke-width="2"/>
+          <path d="M140,13 Q158,2 178,13" fill="#1976d2"/>
+          <path d="M165,66 Q212,90 198,100 Q165,100 167,74Z" fill="#111"/>
+          <path d="M167,67 Q210,90 196,99 Q167,99 169,75Z" fill="#1565c0" opacity=".8"/>
+          <ellipse cx="248" cy="22" rx="9" ry="5" fill="#111"/><ellipse cx="248" cy="22" rx="7" ry="3.5" fill="#0d47a1"/>
+          <path d="M248,17 Q242,7 246,3 M248,17 Q251,6 256,2" stroke="rgba(144,202,249,.5)" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <circle cx="266" cy="36" r="16" fill="#111"/>
+          <circle cx="266" cy="36" r="13" fill="white"/>
+          <circle cx="266" cy="36" r="8" fill="#0a1a3a"/>
+          <circle cx="269" cy="33" r="4" fill="white"/>
+          <path d="M250,62 Q260,70 270,67" stroke="#111" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- FREE SHARK -->
+  <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:7">
+    <div class="cfish goleft" style="animation-duration:20s;animation-delay:-6s;top:40%;opacity:.75;filter:drop-shadow(0 0 12px rgba(100,130,150,.3))">
+      <div class="fishbob" style="animation-duration:2.5s">
+        <svg width="240" height="85" viewBox="0 0 240 85" xmlns="http://www.w3.org/2000/svg">
+          <g class="fishtail" style="transform-origin:14px 42px"><path d="M14,42 Q2,26 7,42 Q2,58 14,42Z" fill="#111"/><path d="M15,42 Q4,28 8,42 Q4,56 15,42Z" fill="#607d8b"/></g>
+          <ellipse cx="128" cy="42" rx="110" ry="30" fill="#111"/>
+          <ellipse cx="128" cy="42" rx="107" ry="27" fill="#607d8b"/>
+          <ellipse cx="115" cy="54" rx="74" ry="14" fill="#eceff1"/>
+          <path d="M62,26 Q92,26 90,28" stroke="#111" stroke-width="1.3" fill="none"/>
+          <path d="M72,23 Q104,23 102,26" stroke="#111" stroke-width="1.3" fill="none"/>
+          <path d="M82,20 Q116,20 114,24" stroke="#111" stroke-width="1.3" fill="none"/>
+          <path d="M106,15 Q122,0 140,13" fill="#111" stroke="#111" stroke-width="2.2"/>
+          <path d="M108,16 Q122,2 138,14" fill="#546e7a"/>
+          <path d="M136,52 Q178,68 166,76 Q136,76 138,60Z" fill="#111"/>
+          <path d="M138,53 Q176,68 164,75 Q138,75 140,61Z" fill="#607d8b" opacity=".8"/>
+          <circle cx="210" cy="32" r="13" fill="#111"/>
+          <circle cx="210" cy="32" r="10" fill="white"/>
+          <circle cx="210" cy="32" r="6.5" fill="#111"/>
+          <circle cx="212" cy="30" r="3" fill="white"/>
+          <path d="M194,50 Q203,60 212,57" stroke="#111" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+          <g fill="white" stroke="#111" stroke-width=".9"><polygon points="196,51 199,59 202,51"/><polygon points="203,54 206,62 209,54"/><polygon points="210,55 213,63 216,55"/></g>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- FREE TURTLE -->
+  <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:7">
+    <div class="cfish goright" style="animation-duration:55s;animation-delay:-18s;top:58%;opacity:.7;filter:drop-shadow(0 0 10px rgba(0,150,50,.3))">
+      <div class="turtlebody">
+        <svg width="150" height="115" viewBox="0 0 150 115" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="75" cy="62" rx="45" ry="38" fill="#111"/>
+          <ellipse cx="75" cy="62" rx="42" ry="35" fill="#2e7d32"/>
+          <ellipse cx="75" cy="62" rx="25" ry="21" fill="#1b5e20" stroke="#111" stroke-width="1.5"/>
+          <line x1="50" y1="62" x2="100" y2="62" stroke="#111" stroke-width="1.2" opacity=".6"/>
+          <line x1="75" y1="27" x2="75" y2="97" stroke="#111" stroke-width="1.2" opacity=".6"/>
+          <ellipse cx="116" cy="50" rx="18" ry="14" fill="#111"/><ellipse cx="116" cy="50" rx="15" ry="11" fill="#388e3c"/>
+          <circle cx="124" cy="44" r="7" fill="#111"/><circle cx="124" cy="44" r="5.5" fill="white"/><circle cx="125" cy="43" r="3" fill="#1a3300"/><circle cx="126" cy="42" r="1.3" fill="white"/>
+          <path d="M110,55 Q115,60 120,58" stroke="#111" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+          <g style="transform-origin:36px 46px;animation:flipwave 1.2s ease-in-out infinite"><path d="M36,46 Q16,28 8,35 Q10,52 26,56Z" fill="#111"/><path d="M37,47 Q18,30 10,37 Q12,52 28,56Z" fill="#2e7d32"/></g>
+          <g style="transform-origin:36px 78px;animation:flipwave 1.2s ease-in-out infinite .4s"><path d="M36,78 Q16,92 8,85 Q12,68 26,67Z" fill="#111"/><path d="M37,77 Q18,90 10,83 Q14,68 28,68Z" fill="#2e7d32"/></g>
+          <g style="transform-origin:110px 46px;animation:flipwave 1.2s ease-in-out infinite .2s"><path d="M110,46 Q130,28 138,35 Q136,52 120,56Z" fill="#111"/><path d="M109,47 Q128,30 136,37 Q134,52 118,56Z" fill="#2e7d32"/></g>
+          <g style="transform-origin:110px 78px;animation:flipwave 1.2s ease-in-out infinite .6s"><path d="M110,78 Q130,92 138,85 Q134,68 120,67Z" fill="#111"/><path d="M109,77 Q128,90 136,83 Q132,68 118,68Z" fill="#2e7d32"/></g>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- FREE DOLPHIN -->
+  <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:8">
+    <div class="cfish goright" style="animation-duration:16s;animation-delay:-4s;top:26%;opacity:.78;filter:drop-shadow(0 0 10px rgba(0,180,180,.3))">
+      <div class="fishbob" style="animation-duration:1.1s">
+        <svg width="165" height="72" viewBox="0 0 165 72" xmlns="http://www.w3.org/2000/svg">
+          <g class="fishtail" style="transform-origin:14px 36px"><path d="M14,36 Q2,22 6,36 Q2,50 14,36Z" fill="#111"/><path d="M15,36 Q4,24 8,36 Q4,48 15,36Z" fill="#0097a7"/></g>
+          <ellipse cx="90" cy="36" rx="73" ry="24" fill="#111"/>
+          <ellipse cx="90" cy="36" rx="70" ry="21" fill="#0097a7"/>
+          <ellipse cx="82" cy="47" rx="48" ry="12" fill="#e0f7fa" opacity=".3"/>
+          <path d="M82,14 Q98,4 112,13" fill="#111" stroke="#111" stroke-width="2"/>
+          <path d="M84,15 Q98,6 110,14" fill="#00838f"/>
+          <path d="M98,44 Q124,56 114,64 Q96,64 98,50Z" fill="#111"/>
+          <path d="M100,45 Q122,56 112,63 Q98,63 100,51Z" fill="#0097a7" opacity=".85"/>
+          <path d="M140,32 Q158,34 155,38 Q152,40 140,40Z" fill="#111"/>
+          <path d="M141,33 Q156,35 153,38 Q150,39 141,39Z" fill="#0097a7"/>
+          <circle cx="136" cy="30" r="11" fill="#111"/><circle cx="136" cy="30" r="8.5" fill="white"/><circle cx="136" cy="30" r="5" fill="#003344"/><circle cx="138" cy="28" r="2.2" fill="white"/>
+          <path d="M143,38 Q147,43 152,41" stroke="#111" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEEPER CORAL -->
+  <div style="position:absolute;bottom:0;left:0;right:0;pointer-events:none;z-index:9;overflow:hidden;height:160px">
+    <svg width="100%" height="160" viewBox="0 0 1440 160" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0,125 Q360,110 720,120 Q1080,130 1440,112 L1440,160 L0,160Z" fill="rgba(0,20,60,.65)"/>
+      <g transform="translate(140,160) scale(1,-1)"><line x1="0" y1="0" x2="0" y2="70" stroke="#00332a" stroke-width="5.5" stroke-linecap="round"/><line x1="0" y1="0" x2="0" y2="70" stroke="#00ffb0" stroke-width="3.5" stroke-linecap="round"/><line x1="0" y1="70" x2="-25" y2="40" stroke="#00ffb0" stroke-width="3" stroke-linecap="round"/><line x1="0" y1="70" x2="25" y2="35" stroke="#00d4ff" stroke-width="3" stroke-linecap="round"/><circle cx="-25" cy="40" r="11" fill="#003322"/><circle cx="-25" cy="40" r="9" fill="#00ffb0" opacity=".75"/><circle cx="25" cy="35" r="10" fill="#003322"/><circle cx="25" cy="35" r="8" fill="#00d4ff" opacity=".75"/></g>
+      <g style="transform-origin:580px 160px;animation:seaweed 5s ease-in-out infinite"><path d="M580,160 Q566,125 580,90 Q594,56 577,28" stroke="#0a1a08" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M580,160 Q566,125 580,90 Q594,56 577,28" stroke="#1a6b3a" stroke-width="4" fill="none" stroke-linecap="round"/></g>
+    </svg>
+  </div>
+
+  <div class="zc">
+    <div class="chip">0 — 200m &nbsp;·&nbsp; Epipelagic Zone</div>
+    <h2 class="zt"><span class="ln">Light <em>Still</em></span><span class="ln"><em>Reaches</em> Here</span></h2>
+    <div class="dv"></div>
+    <p class="zb">Coral cities erupt from the seabed. Schools of fish move as one liquid mind. Blue whales drift like living submarines through shafts of cathedral light. Dolphins leap. Sharks patrol. This world cradles 90% of all life.</p>
+  </div>
+</section>
+
+<!-- ══════════════════════════════
+     ZONE 3: TWILIGHT ZONE
+══════════════════════════════ -->
+<section id="s2">
+  <div id="bio2" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:6"></div>
+  <div id="jelly2" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:7"></div>
+  <div id="bubs2" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:6"></div>
+  <div class="zc">
+    <div class="chip">200 — 1,000m &nbsp;·&nbsp; Mesopelagic Zone</div>
+    <h2 class="zt"><span class="ln">Light <em>Fades.</em></span><span class="ln">Life <span class="gl">Glows.</span></span></h2>
+    <div class="dv"></div>
+    <p class="zb">Sunlight dissolves into indigo. No photosynthesis. No warmth from above. Yet 76% of creatures here conjure their own cold fire — flashing cryptic signals in the eternal pressurised dusk.</p>
+    <div class="sr">
+      <div class="si"><div class="n">&lt;1%</div><div class="l">Sunlight left</div></div>
+      <div class="si"><div class="n">4°C</div><div class="l">Water temp</div></div>
+      <div class="si"><div class="n">76%</div><div class="l">Creatures glow</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════
+     ZONE 4: MIDNIGHT ZONE
+══════════════════════════════ -->
+<section id="s3">
+  <div id="bio3" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:6"></div>
+
+  <!-- FREE ANGLERFISH - hovering, lure pulsing -->
+  <div style="position:absolute;right:5%;top:50%;transform:translateY(-50%);pointer-events:none;z-index:9">
+    <div class="fishbob" style="animation-duration:3s">
+      <svg width="280" height="200" viewBox="0 0 280 200" xmlns="http://www.w3.org/2000/svg">
+        <g class="astalk" style="transform-origin:148px 78px">
+          <path d="M148,78 Q162,54 172,32 Q178,18 184,5" stroke="#1a2a1a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <path d="M148,78 Q162,54 172,32 Q178,18 184,5" stroke="rgba(0,180,100,.45)" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <g class="alure">
+            <circle cx="184" cy="5" r="15" fill="rgba(0,255,136,.07)"/>
+            <circle cx="184" cy="5" r="10" fill="#001a08" stroke="#00ff88" stroke-width="2"/>
+            <circle cx="184" cy="5" r="6" fill="#00ff88"/>
+            <circle cx="180" cy="2" r="2.5" fill="rgba(255,255,255,.65)"/>
+            <circle cx="184" cy="5" r="24" fill="rgba(0,255,136,.03)"/>
+          </g>
+        </g>
+        <ellipse cx="148" cy="122" rx="72" ry="48" fill="#0a0018" stroke="#1a0030" stroke-width="3.5"/>
+        <ellipse cx="148" cy="138" rx="44" ry="20" fill="rgba(255,255,255,.04)"/>
+        <g stroke="#1a0030" stroke-linecap="round"><line x1="104" y1="76" x2="96" y2="58" stroke-width="2.8"/><line x1="104" y1="76" x2="96" y2="58" stroke="rgba(150,100,255,.28)" stroke-width="1.4"/><line x1="116" y1="72" x2="110" y2="54" stroke-width="2.8"/><line x1="116" y1="72" x2="110" y2="54" stroke="rgba(150,100,255,.28)" stroke-width="1.4"/><line x1="128" y1="70" x2="126" y2="51" stroke-width="2.8"/><line x1="140" y1="71" x2="141" y2="52" stroke-width="2.8"/></g>
+        <path d="M74,132 Q90,158 126,161 Q162,163 180,148 Q190,140 187,126" fill="#04000c" stroke="#1a0030" stroke-width="2.8"/>
+        <g fill="#d0c8e0" stroke="#1a0030" stroke-width=".9"><polygon points="82,136 86,154 90,136"/><polygon points="96,141 100,159 104,141"/><polygon points="111,143 115,161 119,143"/><polygon points="127,144 131,162 135,144"/><polygon points="142,143 146,160 150,143"/><polygon points="156,141 160,157 164,141"/><polygon points="168,138 172,153 176,138"/></g>
+        <circle cx="112" cy="108" r="16" fill="#0a0018" stroke="#1a0030" stroke-width="2.5"/>
+        <circle cx="112" cy="108" r="12" fill="#1a0035"/>
+        <circle cx="112" cy="108" r="7.5" fill="rgba(0,200,240,.2)"/>
+        <circle cx="115" cy="105" r="4" fill="rgba(0,200,240,.6)"/>
+        <circle cx="116" cy="104" r="2" fill="white" opacity=".8"/>
+        <path d="M208,112 Q238,98 234,136 Q222,146 208,136" fill="#0a0018" stroke="#1a0030" stroke-width="2.2"/>
+        <path d="M218,122 Q250,108 256,125 Q248,144 218,137" fill="#0a0018" stroke="#1a0030" stroke-width="2.2"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- FREE GIANT SQUID - lurking left side -->
+  <div style="position:absolute;left:3%;top:50%;transform:translateY(-55%);pointer-events:none;z-index:8">
+    <div style="animation:jdriftup 5s ease-in-out infinite">
+      <svg width="120" height="220" viewBox="0 0 120 220" xmlns="http://www.w3.org/2000/svg">
+        <path d="M38,8 Q60,-4 82,8 Q72,2 60,0 Q48,2 38,8Z" fill="#111"/>
+        <path d="M39,9 Q60,-3 81,9 Q72,3 60,1 Q48,3 39,9Z" fill="#6a1b9a"/>
+        <ellipse cx="60" cy="42" rx="30" ry="36" fill="#111"/>
+        <ellipse cx="60" cy="42" rx="27" ry="33" fill="#4a148c"/>
+        <path d="M32,30 Q18,22 14,32 Q16,46 30,44Z" fill="#111"/><path d="M33,31 Q20,24 16,33 Q18,45 31,44Z" fill="#4a148c"/>
+        <path d="M88,30 Q102,22 106,32 Q104,46 90,44Z" fill="#111"/><path d="M87,31 Q100,24 104,33 Q102,45 89,44Z" fill="#4a148c"/>
+        <circle cx="44" cy="38" r="12" fill="#111"/><circle cx="44" cy="38" r="9.5" fill="white"/><circle cx="44" cy="38" r="6" fill="#1a0030"/><circle cx="46" cy="36" r="3" fill="white"/>
+        <circle cx="76" cy="38" r="12" fill="#111"/><circle cx="76" cy="38" r="9.5" fill="white"/><circle cx="76" cy="38" r="6" fill="#1a0030"/><circle cx="78" cy="36" r="3" fill="white"/>
+        <path d="M50,60 Q44,68 40,60 Q42,56 48,57 Q52,56 50,60Z" fill="#111"/>
+        <g stroke="#111" stroke-width="3.5" stroke-linecap="round" fill="none">
+          <path d="M44,74 Q36,100 34,128"/><path d="M44,74 Q36,100 34,128" stroke="#7b1fa2" stroke-width="2.2"/>
+          <path d="M50,76 Q46,104 44,134"/><path d="M50,76 Q46,104 44,134" stroke="#7b1fa2" stroke-width="2.2"/>
+          <path d="M56,77 Q55,106 54,136"/><path d="M56,77 Q55,106 54,136" stroke="#7b1fa2" stroke-width="2.2"/>
+          <path d="M62,77 Q64,106 64,136"/><path d="M62,77 Q64,106 64,136" stroke="#7b1fa2" stroke-width="2.2"/>
+          <path d="M68,76 Q72,104 74,133"/><path d="M68,76 Q72,104 74,133" stroke="#7b1fa2" stroke-width="2.2"/>
+          <path d="M74,74 Q80,100 84,128"/><path d="M74,74 Q80,100 84,128" stroke="#7b1fa2" stroke-width="2.2"/>
+        </g>
+        <path d="M46,74 Q28,106 20,145" stroke="#111" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+        <path d="M46,74 Q28,106 20,145" stroke="#9c27b0" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M72,74 Q90,106 98,145" stroke="#111" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+        <path d="M72,74 Q90,106 98,145" stroke="#9c27b0" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- FREE VAMPIRE SQUID - floating top left -->
+  <div style="position:absolute;left:18%;top:15%;pointer-events:none;z-index:8">
+    <div style="animation:jdriftup 7s ease-in-out -3s infinite">
+      <svg width="130" height="130" viewBox="0 0 130 130" xmlns="http://www.w3.org/2000/svg">
+        <path d="M65,55 Q30,76 22,100 Q40,90 65,95 Q90,90 108,100 Q100,76 65,55Z" fill="#111"/>
+        <path d="M65,55 Q31,75 23,98 Q40,89 65,94 Q90,89 107,98 Q99,75 65,55Z" fill="#4a0080" opacity=".92"/>
+        <circle cx="38" cy="82" r="4" fill="#00ffb0" style="animation:bipulse 1.8s ease-in-out infinite"/>
+        <circle cx="65" cy="90" r="3.5" fill="#00d4ff" style="animation:bipulse 1.8s ease-in-out infinite .6s"/>
+        <circle cx="92" cy="82" r="4" fill="#00ffb0" style="animation:bipulse 1.8s ease-in-out infinite 1.2s"/>
+        <circle cx="30" cy="93" r="2.5" fill="#c084fc" style="animation:bipulse 1.8s ease-in-out infinite .3s"/>
+        <circle cx="100" cy="93" r="2.5" fill="#c084fc" style="animation:bipulse 1.8s ease-in-out infinite .9s"/>
+        <ellipse cx="65" cy="46" rx="28" ry="32" fill="#111"/>
+        <ellipse cx="65" cy="46" rx="25" ry="29" fill="#2d0060"/>
+        <path d="M38,30 Q28,10 38,20Z" fill="#111"/><path d="M38,30 Q29,12 38,21Z" fill="#4a0080"/>
+        <path d="M92,30 Q102,10 92,20Z" fill="#111"/><path d="M92,30 Q101,12 92,21Z" fill="#4a0080"/>
+        <circle cx="50" cy="40" r="11" fill="#111"/><circle cx="50" cy="40" r="8.5" fill="#1a0035"/><circle cx="50" cy="40" r="5.5" fill="#ff0080" style="animation:bipulse 1.2s ease-in-out infinite"/><circle cx="52" cy="38" r="2.5" fill="rgba(255,255,255,.5)"/>
+        <circle cx="80" cy="40" r="11" fill="#111"/><circle cx="80" cy="40" r="8.5" fill="#1a0035"/><circle cx="80" cy="40" r="5.5" fill="#ff0080" style="animation:bipulse 1.2s ease-in-out infinite .6s"/><circle cx="82" cy="38" r="2.5" fill="rgba(255,255,255,.5)"/>
+        <path d="M40,72 Q28,90 20,112" stroke="#4a0080" stroke-width="2" fill="none" stroke-dasharray="4,4"/>
+        <path d="M90,72 Q102,90 110,112" stroke="#4a0080" stroke-width="2" fill="none" stroke-dasharray="4,4"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="zc">
+    <div class="chip">1,000 — 4,000m &nbsp;·&nbsp; Bathypelagic Zone</div>
+    <h2 class="zt"><span class="ln"><em>Absolute</em></span><span class="ln"><span class="or">Darkness.</span></span></h2>
+    <div class="dv"></div>
+    <p class="zb">No photon has ever touched this depth. The anglerfish dangles its green lantern. The giant squid lurks in the black. The vampire squid spreads its glowing cloak. Something always answers the light.</p>
+  </div>
+</section>
+
+<!-- ══════════════════════════════
+     ZONE 5: HADAL ZONE
+══════════════════════════════ -->
+<section id="s4">
+  <div id="bio4" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:6"></div>
+  <!-- trench lines -->
+  <svg style="position:absolute;bottom:0;width:100%;pointer-events:none;z-index:7;opacity:.15" viewBox="0 0 1440 300" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M560,300 L640,155 L672,202 L700,88 L732,190 L758,72 L798,195 L840,300" fill="rgba(0,180,240,.06)" stroke="rgba(0,180,240,.3)" stroke-width="1.8"/>
+    <path d="M790,300 L826,196 L848,232 L866,148 L896,215 L916,300" fill="none" stroke="rgba(0,180,240,.15)" stroke-width="1.2"/>
+  </svg>
+  <!-- SNAILFISH cartoon -->
+  <svg style="position:absolute;bottom:80px;left:50%;animation:snailbob 4.5s ease-in-out infinite;pointer-events:none;z-index:8;opacity:.65" width="160" height="65" viewBox="0 0 160 65">
+    <path d="M22,33 Q55,6 90,18 Q125,28 140,33 Q125,42 90,50 Q55,60 22,40Z" fill="#0a0018" stroke="rgba(200,230,244,.4)" stroke-width="2"/>
+    <path d="M22,33 Q55,8 90,20 Q122,30 138,33 Q122,40 90,48 Q55,58 22,38Z" fill="rgba(200,230,244,.12)"/>
+    <!-- eye -->
+    <circle cx="28" cy="30" r="7" fill="#0a0018" stroke="rgba(200,230,244,.4)" stroke-width="1.5"/>
+    <circle cx="28" cy="30" r="4" fill="rgba(200,230,244,.2)"/>
+    <circle cx="30" cy="28" r="2" fill="rgba(200,230,244,.5)"/>
+    <!-- tail -->
+    <path d="M140,33 Q156,24 153,33 Q156,42 140,33" fill="rgba(200,230,244,.1)" stroke="rgba(200,230,244,.35)" stroke-width="1.5"/>
+    <!-- fin -->
+    <path d="M80,18 Q100,6 115,14" stroke="rgba(200,230,244,.3)" stroke-width="1.5" fill="none"/>
+  </svg>
+  <div class="zc">
+    <div class="chip">6,000 — 11,034m &nbsp;·&nbsp; The Hadal Zone</div>
+    <div class="pring"><div class="pn">1,100</div><div class="pl">ATM PRESSURE</div></div>
+    <h2 class="zt"><span class="ln">The <em>Last</em></span><span class="ln"><em>Frontier.</em></span></h2>
+    <div class="dv"></div>
+    <p class="zb">The Mariana Trench descends deeper than Everest stands tall. Pressure compresses seawater itself. Yet ghostly snailfish thrive in conditions that dissolve bone. We have mapped more of Mars than this place.</p>
+    <div class="sr">
+      <div class="si"><div class="n">11km</div><div class="l">Max depth</div></div>
+      <div class="si"><div class="n">1100x</div><div class="l">Surface pressure</div></div>
+      <div class="si"><div class="n">95%</div><div class="l">Still unexplored</div></div>
+    </div>
+    <p class="fnote">You have reached the bottom of the world &nbsp;·&nbsp; Scroll up to surface</p>
+  </div>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+/* ── CURSOR ── */
+const cur=document.getElementById('cur'),cur2=document.getElementById('cur2');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px'});
+(function lp(){rx+=(mx-rx)*.09;ry+=(my-ry)*.09;cur2.style.left=rx+'px';cur2.style.top=ry+'px';requestAnimationFrame(lp)})();
+
+/* ══════════════════════════════
+   PIXAR FISH SVG GENERATOR
+══════════════════════════════ */
+function makeFishSVG(type, bodyColor, stripeColor, finColor, sz) {
+  const w = sz * 2.4, h = sz;
+  // Premium: semi-transparent fills, glowing outlines, no heavy black strokes
+  const glow = bodyColor;
+  if (type === 'nemo') {
+    return `<svg width="${w}" height="${h}" viewBox="0 0 96 40" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 0 6px ${glow}88)">
+      <g class="fishtail" style="transform-origin:10px 20px">
+        <path d="M8,20 Q-2,10 4,20 Q-2,30 8,20Z" fill="${bodyColor}" opacity=".7"/>
+      </g>
+      <ellipse cx="52" cy="20" rx="40" ry="17" fill="${bodyColor}" opacity=".75"/>
+      <ellipse cx="52" cy="20" rx="38" ry="15" fill="${bodyColor}" opacity=".55"/>
+      <rect x="36" y="5" width="8" height="30" rx="4" fill="rgba(255,255,255,.5)" opacity=".7"/>
+      <rect x="55" y="7" width="6" height="26" rx="3" fill="rgba(255,255,255,.45)" opacity=".65"/>
+      <g class="fishfin"><path d="M38,5 Q52,-4 67,5" fill="${finColor}" opacity=".6"/></g>
+      <path d="M55,24 Q67,31 62,35 Q50,35 52,28Z" fill="${finColor}" opacity=".5"/>
+      <ellipse cx="52" cy="26" rx="22" ry="7" fill="rgba(255,255,255,.12)"/>
+      <circle cx="76" cy="16" r="9" fill="rgba(0,0,0,.5)"/>
+      <circle cx="76" cy="16" r="7" fill="rgba(255,255,255,.9)"/>
+      <circle cx="76" cy="16" r="4.5" fill="rgba(20,10,0,.85)"/>
+      <circle cx="78" cy="14" r="2" fill="rgba(255,255,255,.9)"/>
+    </svg>`;
+  } else if (type === 'dory') {
+    return `<svg width="${w}" height="${h}" viewBox="0 0 100 42" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 0 6px ${glow}88)">
+      <g class="fishtail" style="transform-origin:10px 21px">
+        <path d="M8,21 Q-3,10 4,21 Q-3,32 8,21Z" fill="${bodyColor}" opacity=".7"/>
+      </g>
+      <ellipse cx="54" cy="21" rx="42" ry="18" fill="${bodyColor}" opacity=".72"/>
+      <ellipse cx="54" cy="21" rx="40" ry="16" fill="${bodyColor}" opacity=".5"/>
+      <path d="M12,21 Q8,13 14,21 Q8,29 12,21Z" fill="${stripeColor}" opacity=".8"/>
+      <path d="M20,6 Q54,3 80,9" stroke="${stripeColor}" stroke-width="2.5" fill="none" opacity=".55" stroke-linecap="round"/>
+      <g class="fishfin"><path d="M35,5 Q54,-6 72,5" fill="${bodyColor}" opacity=".5"/></g>
+      <path d="M58,26 Q72,35 66,39 Q52,39 54,30Z" fill="${finColor}" opacity=".55"/>
+      <ellipse cx="52" cy="28" rx="25" ry="8" fill="rgba(255,255,255,.12)"/>
+      <circle cx="80" cy="17" r="10" fill="rgba(0,0,0,.5)"/>
+      <circle cx="80" cy="17" r="8" fill="rgba(255,255,255,.9)"/>
+      <circle cx="80" cy="17" r="5" fill="rgba(0,20,80,.85)"/>
+      <circle cx="82" cy="15" r="2.5" fill="rgba(255,255,255,.9)"/>
+    </svg>`;
+  } else if (type === 'yellow') {
+    return `<svg width="${w*0.85}" height="${h}" viewBox="0 0 82 40" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 0 5px ${glow}88)">
+      <g class="fishtail" style="transform-origin:8px 20px">
+        <path d="M6,20 Q-3,10 3,20 Q-3,30 6,20Z" fill="${bodyColor}" opacity=".7"/>
+      </g>
+      <ellipse cx="44" cy="20" rx="34" ry="17" fill="${bodyColor}" opacity=".75"/>
+      <ellipse cx="44" cy="20" rx="32" ry="15" fill="${bodyColor}" opacity=".55"/>
+      <rect x="14" y="17" width="50" height="6" rx="3" fill="rgba(255,255,255,.28)"/>
+      <g class="fishfin"><path d="M28,5 Q44,-6 60,5" fill="${finColor}" opacity=".6"/></g>
+      <path d="M44,24 Q57,31 51,35 Q40,35 42,28Z" fill="${finColor}" opacity=".55"/>
+      <ellipse cx="44" cy="25" rx="18" ry="6" fill="rgba(255,255,255,.12)"/>
+      <circle cx="66" cy="15" r="8" fill="rgba(0,0,0,.5)"/>
+      <circle cx="66" cy="15" r="6.5" fill="rgba(255,255,255,.9)"/>
+      <circle cx="66" cy="15" r="4" fill="rgba(30,10,0,.85)"/>
+      <circle cx="68" cy="13" r="1.8" fill="rgba(255,255,255,.9)"/>
+    </svg>`;
+  } else {
+    return `<svg width="${w*0.75}" height="${h}" viewBox="0 0 72 36" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 0 4px ${glow}77)">
+      <g class="fishtail" style="transform-origin:8px 18px">
+        <path d="M6,18 Q-2,10 3,18 Q-2,26 6,18Z" fill="${bodyColor}" opacity=".65"/>
+      </g>
+      <ellipse cx="38" cy="18" rx="30" ry="13" fill="${bodyColor}" opacity=".7"/>
+      <ellipse cx="38" cy="18" rx="28" ry="11" fill="${bodyColor}" opacity=".5"/>
+      <g class="fishfin"><path d="M24,7 Q38,-2 52,7" fill="${finColor}" opacity=".5"/></g>
+      <ellipse cx="38" cy="22" rx="17" ry="5" fill="rgba(255,255,255,.1)"/>
+      <circle cx="58" cy="13" r="6.5" fill="rgba(0,0,0,.5)"/>
+      <circle cx="58" cy="13" r="5" fill="rgba(255,255,255,.88)"/>
+      <circle cx="58" cy="13" r="3" fill="rgba(20,15,0,.85)"/>
+      <circle cx="59.2" cy="12" r="1.3" fill="rgba(255,255,255,.9)"/>
+    </svg>`;
+  }
+}
+
+function spawnFish(containerId, specs) {
+  const c = document.getElementById(containerId);
+  if (!c) return;
+  specs.forEach(spec => {
+    const wrap = document.createElement('div');
+    const goRight = Math.random() > 0.5;
+    const dur = spec.dur || (18 + Math.random() * 20);
+    const delay = -(Math.random() * dur);
+    const top = spec.top || (8 + Math.random() * 75);
+    wrap.className = 'cfish ' + (goRight ? 'goright' : 'goleft');
+    wrap.style.cssText = `top:${top}%;animation-duration:${dur}s;animation-delay:${delay}s`;
+    const inner = document.createElement('div');
+    inner.className = 'fishbob';
+    inner.style.animationDuration = (1.5 + Math.random() * 1.5) + 's';
+    inner.style.animationDelay = -(Math.random() * 3) + 's';
+    inner.innerHTML = makeFishSVG(spec.type, spec.body, spec.stripe, spec.fin, spec.size || 22);
+    wrap.appendChild(inner);
+    c.appendChild(wrap);
+  });
+}
+
+/* ── BUBBLES ── */
+function spawnBubbles(id, n) {
+  const c = document.getElementById(id);
+  if (!c) return;
+  for (let i = 0; i < n; i++) {
+    const b = document.createElement('div');
+    const sz = 4 + Math.random() * 11;
+    b.className = 'bub';
+    b.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;animation-duration:${7+Math.random()*9}s;animation-delay:${-Math.random()*14}s;background:rgba(255,255,255,.08)`;
+    c.appendChild(b);
+  }
+}
+
+/* ── SUN RAYS ── */
+function spawnRays() {
+  const c = document.getElementById('rays0');
+  if (!c) return;
+  for (let i = 0; i < 9; i++) {
+    const r = document.createElement('div');
+    r.className = 'sray';
+    const w = 35 + Math.random() * 80;
+    r.style.cssText = `left:${3+i*11}%;height:${50+Math.random()*50}%;width:${w}px;animation-duration:${2+Math.random()*3}s;animation-delay:${-Math.random()*5}s`;
+    c.appendChild(r);
+  }
+}
+
+/* ── CAUSTICS ── */
+function spawnCaustics() {
+  const c = document.getElementById('cau0');
+  if (!c) return;
+  for (let i = 0; i < 16; i++) {
+    const r = document.createElement('div');
+    r.className = 'cring';
+    const sz = 20 + Math.random() * 100;
+    r.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-duration:${3+Math.random()*4}s;animation-delay:${-Math.random()*6}s`;
+    c.appendChild(r);
+  }
+}
+
+/* ── TURTLE ── */
+function spawnTurtle() {
+  const c = document.getElementById('turtle0');
+  if (!c) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'turtle';
+  wrap.style.cssText = `top:${28+Math.random()*20}%;animation-duration:${55+Math.random()*20}s;animation-delay:${-Math.random()*30}s`;
+  wrap.innerHTML = `<div class="turtlebody"><svg width="110" height="80" viewBox="0 0 110 80" xmlns="http://www.w3.org/2000/svg">
+    <!-- shell -->
+    <ellipse cx="55" cy="42" rx="32" ry="25" fill="#111" stroke="#111" stroke-width="3"/>
+    <ellipse cx="55" cy="42" rx="30" ry="23" fill="#2d6a2d"/>
+    <!-- shell pattern -->
+    <ellipse cx="55" cy="42" rx="18" ry="14" fill="#1a4a1a" stroke="#111" stroke-width="1"/>
+    <line x1="37" y1="42" x2="73" y2="42" stroke="#111" stroke-width="1" opacity=".5"/>
+    <line x1="55" y1="20" x2="55" y2="64" stroke="#111" stroke-width="1" opacity=".5"/>
+    <!-- head -->
+    <ellipse cx="84" cy="36" rx="14" ry="11" fill="#111"/>
+    <ellipse cx="84" cy="36" rx="12" ry="9" fill="#3a7a3a"/>
+    <!-- eye -->
+    <circle cx="90" cy="32" r="5" fill="#111"/>
+    <circle cx="90" cy="32" r="3.5" fill="white"/>
+    <circle cx="91" cy="31" r="2" fill="#001a00"/>
+    <circle cx="92" cy="30" r="1" fill="white"/>
+    <!-- smile -->
+    <path d="M82,40 Q86,44 90,42" stroke="#111" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <!-- flippers -->
+    <g class="flipper" style="transform-origin:38px 32px">
+      <path d="M38,32 Q18,16 10,22 Q12,38 28,42Z" fill="#111"/>
+      <path d="M38,33 Q20,18 12,24 Q14,38 29,42Z" fill="#2d6a2d"/>
+    </g>
+    <g class="flipper" style="transform-origin:38px 54px;animation-delay:-.5s">
+      <path d="M38,54 Q18,65 10,58 Q14,44 28,42Z" fill="#111"/>
+      <path d="M38,53 Q20,63 12,56 Q16,44 29,43Z" fill="#2d6a2d"/>
+    </g>
+    <g class="flipper" style="transform-origin:68px 32px;animation-delay:-.3s">
+      <path d="M68,32 Q88,16 96,22 Q94,38 78,42Z" fill="#111"/>
+      <path d="M68,33 Q86,18 94,24 Q92,38 77,42Z" fill="#2d6a2d"/>
+    </g>
+    <g class="flipper" style="transform-origin:68px 54px;animation-delay:-.8s">
+      <path d="M68,54 Q88,65 96,58 Q92,44 78,42Z" fill="#111"/>
+      <path d="M68,53 Q86,63 94,56 Q90,44 77,43Z" fill="#2d6a2d"/>
+    </g>
+  </svg></div>`;
+  c.appendChild(wrap);
+}
+
+/* ── JELLYFISH ── */
+function spawnJellies(id) {
+  const c = document.getElementById(id);
+  if (!c) return;
+  const configs = [
+    {col:'rgba(155,93,229,.6)',outline:'#5a0099',inner:'rgba(200,150,255,.15)'},
+    {col:'rgba(0,200,240,.55)',outline:'#005577',inner:'rgba(100,220,255,.12)'},
+    {col:'rgba(255,100,180,.5)',outline:'#880044',inner:'rgba(255,180,220,.12)'},
+    {col:'rgba(0,255,176,.45)',outline:'#006644',inner:'rgba(100,255,200,.1)'},
+    {col:'rgba(200,100,255,.5)',outline:'#660077',inner:'rgba(220,150,255,.1)'},
+    {col:'rgba(0,200,240,.5)',outline:'#004466',inner:'rgba(100,200,255,.1)'},
+    {col:'rgba(255,150,100,.45)',outline:'#883300',inner:'rgba(255,200,150,.1)'},
+  ];
+  configs.forEach((cfg, i) => {
+    const sz = 50 + Math.random() * 65;
+    const wrap = document.createElement('div');
+    wrap.className = 'jdrift';
+    wrap.style.cssText = `left:${4+Math.random()*88}%;top:${4+Math.random()*78}%;animation-duration:${5+Math.random()*6}s;animation-delay:${-Math.random()*9}s`;
+    const svgW = sz, svgH = sz * 1.6;
+    wrap.innerHTML = `<svg width="${svgW}" height="${svgH}" viewBox="0 0 70 112" xmlns="http://www.w3.org/2000/svg">
+      <g class="jbody" style="animation-duration:${1.2+Math.random()*0.8}s">
+        <!-- dome outline -->
+        <ellipse cx="35" cy="28" rx="32" ry="26" fill="${cfg.outline}" opacity=".6"/>
+        <!-- dome fill -->
+        <ellipse cx="35" cy="28" rx="30" ry="24" fill="${cfg.col.replace(/[\d.]+\)$/,'0.12)')}"/>
+        <ellipse cx="35" cy="28" rx="30" ry="24" fill="none" stroke="${cfg.col}" stroke-width="2"/>
+        <!-- inner dome -->
+        <ellipse cx="35" cy="28" rx="20" ry="16" fill="${cfg.inner}"/>
+        <!-- highlight -->
+        <ellipse cx="25" cy="18" rx="10" ry="7" fill="rgba(255,255,255,.12)" transform="rotate(-20,25,18)"/>
+        <!-- glow dots -->
+        <circle cx="22" cy="22" r="4" fill="${cfg.col}" opacity=".7"/>
+        <circle cx="38" cy="16" r="3" fill="${cfg.col}" opacity=".6"/>
+        <circle cx="46" cy="26" r="3.5" fill="${cfg.col}" opacity=".6"/>
+      </g>
+      <!-- tentacles with outlines -->
+      <line x1="16" y1="52" x2="8"  y2="95"  stroke="${cfg.outline}" stroke-width="2.5" stroke-dasharray="4,5" opacity=".5"/>
+      <line x1="16" y1="52" x2="8"  y2="95"  stroke="${cfg.col}" stroke-width="1.5" stroke-dasharray="4,5"/>
+      <line x1="22" y1="53" x2="17" y2="98"  stroke="${cfg.col}" stroke-width="1.5" stroke-dasharray="3,5"/>
+      <line x1="29" y1="53" x2="27" y2="105" stroke="${cfg.outline}" stroke-width="2" stroke-dasharray="4,5" opacity=".4"/>
+      <line x1="29" y1="53" x2="27" y2="105" stroke="${cfg.col}" stroke-width="1.5" stroke-dasharray="4,5"/>
+      <line x1="35" y1="53" x2="35" y2="108" stroke="${cfg.col}" stroke-width="1.5" stroke-dasharray="4,5"/>
+      <line x1="41" y1="53" x2="43" y2="106" stroke="${cfg.col}" stroke-width="1.5" stroke-dasharray="4,5"/>
+      <line x1="48" y1="53" x2="52" y2="100" stroke="${cfg.col}" stroke-width="1.5" stroke-dasharray="3,5"/>
+      <line x1="54" y1="52" x2="62" y2="94"  stroke="${cfg.outline}" stroke-width="2" stroke-dasharray="4,5" opacity=".4"/>
+      <line x1="54" y1="52" x2="62" y2="94"  stroke="${cfg.col}" stroke-width="1.5" stroke-dasharray="4,5"/>
+    </svg>`;
+    c.appendChild(wrap);
+  });
+}
+
+/* ── BIOLUM ── */
+function spawnBiolum(id, n, colors) {
+  const c = document.getElementById(id);
+  if (!c) return;
+  colors.forEach(col => {
+    for (let i = 0; i < n; i++) {
+      const d = document.createElement('div');
+      d.className = 'biod';
+      const sz = 3 + Math.random() * 5;
+      d.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;background:${col};box-shadow:0 0 ${sz*3}px ${col};animation-duration:${1.5+Math.random()*3}s;animation-delay:${-Math.random()*5}s`;
+      c.appendChild(d);
+    }
+  });
+}
+
+/* ══ SPAWN ALL ══ */
+// Zone 0 - Surface: Nemo, Dory, yellow tang, small fish
+spawnFish('fish0', [
+  {type:'nemo',body:'#ff6b2b',stripe:'white',fin:'#ff4400',size:26,top:15,dur:22},
+  {type:'nemo',body:'#ff6b2b',stripe:'white',fin:'#ff4400',size:20,top:55,dur:28},
+  {type:'nemo',body:'#ff8c42',stripe:'white',fin:'#ff5500',size:18,top:72,dur:25},
+  {type:'dory',body:'#1565c0',stripe:'#ffd700',fin:'#0d47a1',size:28,top:28,dur:20},
+  {type:'dory',body:'#1976d2',stripe:'#ffd700',fin:'#1565c0',size:22,top:62,dur:32},
+  {type:'yellow',body:'#ffd700',stripe:'white',fin:'#ffaa00',size:20,top:42,dur:26},
+  {type:'small',body:'#ff4081',stripe:'white',fin:'#c2185b',size:14,top:20,dur:18},
+  {type:'small',body:'#00bcd4',stripe:'white',fin:'#0097a7',size:16,top:38,dur:24},
+  {type:'small',body:'#76ff03',stripe:'white',fin:'#64dd17',size:13,top:68,dur:20},
+  {type:'small',body:'#ff6d00',stripe:'white',fin:'#e65100',size:15,top:80,dur:22},
+  {type:'small',body:'#aa00ff',stripe:'white',fin:'#7c00cc',size:14,top:48,dur:19},
+  {type:'nemo',body:'#ff5722',stripe:'white',fin:'#d84315',size:17,top:85,dur:30},
+]);
+
+// Zone 1 - Sunlight: deeper cooler colours
+spawnFish('fish1', [
+  {type:'dory',body:'#0288d1',stripe:'#ffd700',fin:'#01579b',size:24,top:20,dur:24},
+  {type:'dory',body:'#039be5',stripe:'#ffc107',fin:'#0277bd',size:18,top:60,dur:30},
+  {type:'nemo',body:'#ff6b2b',stripe:'white',fin:'#bf360c',size:22,top:38,dur:26},
+  {type:'yellow',body:'#fbc02d',stripe:'white',fin:'#f57f17',size:20,top:72,dur:22},
+  {type:'small',body:'#00e5ff',stripe:'white',fin:'#00acc1',size:15,top:14,dur:20},
+  {type:'small',body:'#69f0ae',stripe:'white',fin:'#00c853',size:14,top:50,dur:18},
+  {type:'small',body:'#40c4ff',stripe:'white',fin:'#0091ea',size:13,top:82,dur:24},
+  {type:'small',body:'#ff80ab',stripe:'white',fin:'#f50057',size:15,top:30,dur:21},
+]);
+
+spawnBubbles('bubs0', 14);
+spawnBubbles('bubs1', 10);
+spawnBubbles('bubs2', 7);
+spawnRays();
+spawnCaustics();
+spawnTurtle();
+spawnJellies('jelly2');
+spawnBiolum('bio2', 9, ['rgba(0,212,255,.95)','rgba(0,255,176,.85)','rgba(155,93,229,.9)']);
+spawnBiolum('bio3', 13, ['rgba(0,255,136,.95)','rgba(0,200,240,.85)','rgba(180,80,255,.8)']);
+spawnBiolum('bio4', 8, ['rgba(0,130,200,.7)','rgba(0,80,140,.6)']);
+
+/* ── SCROLL REVEAL ── */
+const sections=document.querySelectorAll('section');
+const dots=document.querySelectorAll('.dot');
+const hdEl=document.getElementById('hd');
+const hzEl=document.getElementById('hz');
+const htEl=document.getElementById('ht');
+const pbar=document.getElementById('pbar');
+const zNames=['Surface','Sunlight Zone','Twilight Zone','Midnight Zone','Hadal Zone'];
+const depths=[0,200,1000,4000,11034];
+const temps=['20°C','14°C','4°C','2°C','1°C'];
+
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(!e.isIntersecting)return;
+    const s=e.target;
+    const chip=s.querySelector('.chip');
+    if(chip)gsap.to(chip,{opacity:1,y:0,duration:.6,ease:'power2.out'});
+    gsap.to(s.querySelectorAll('.ln'),{y:'0%',duration:1,stagger:.13,ease:'power3.out',delay:.08});
+    const dv=s.querySelector('.dv');
+    if(dv)gsap.to(dv,{opacity:1,duration:.6,delay:.3});
+    const zb=s.querySelector('.zb');
+    if(zb)gsap.to(zb,{opacity:1,y:0,duration:.9,delay:.35,ease:'power2.out'});
+    const sr=s.querySelector('.sr');
+    if(sr)gsap.to(sr,{opacity:1,y:0,duration:.8,delay:.5,ease:'power2.out'});
+    const cg=s.querySelector('.cg');
+    if(cg)gsap.to(cg,{opacity:1,y:0,duration:.8,delay:.5,ease:'power2.out'});
+    obs.unobserve(s);
+  });
+},{threshold:.2});
+sections.forEach(s=>obs.observe(s));
+
+window.addEventListener('scroll',()=>{
+  const p=Math.max(0,Math.min(1,window.scrollY/(document.body.scrollHeight-innerHeight)));
+  pbar.style.width=(p*100)+'%';
+  const zf=Math.min(p*4,3.999);
+  const zi=Math.floor(zf);
+  const d=Math.round(depths[zi]+(depths[zi+1]-depths[zi])*(zf-zi));
+  hdEl.textContent=d>=1000?(d/1000).toFixed(1)+'k':d;
+  const zi2=Math.min(Math.floor(p*5),4);
+  hzEl.textContent=zNames[zi2];
+  htEl.textContent=temps[zi2];
+  dots.forEach((dt,i)=>dt.classList.toggle('on',i===zi2));
+},{passive:true});
+
+dots.forEach(dot=>{
+  dot.addEventListener('click',()=>sections[parseInt(dot.dataset.i)].scrollIntoView({behavior:'smooth'}));
+});
+
+/* ── LOADER ── */
+window.addEventListener('load',()=>{
+  setTimeout(()=>document.getElementById('ldfill').style.width='100%',100);
+  setTimeout(()=>{
+    document.getElementById('loader').classList.add('out');
+    setTimeout(()=>{const l=document.getElementById('loader');if(l)l.remove();},950);
+    const s0=sections[0];
+    const chip0=s0.querySelector('.chip');
+    if(chip0)gsap.to(chip0,{opacity:1,y:0,duration:.6,delay:.3});
+    gsap.to(s0.querySelectorAll('.ln'),{y:'0%',duration:1,stagger:.15,ease:'power3.out',delay:.4});
+    gsap.to(s0.querySelector('.dv'),{opacity:1,duration:.6,delay:.7});
+    gsap.to(s0.querySelector('.zb'),{opacity:1,y:0,duration:.9,delay:.8});
+    gsap.to(s0.querySelector('.sr'),{opacity:1,y:0,duration:.8,delay:1});
+  },2500);
+});
+</script>
+<canvas id="grain" style="position:fixed;inset:0;z-index:9990;pointer-events:none;opacity:.022;mix-blend-mode:screen"></canvas>
+<script>
+// Film grain overlay
+(function grain(){
+  const c=document.getElementById('grain');
+  if(!c)return;
+  const ctx=c.getContext('2d');
+  function draw(){
+    c.width=innerWidth;c.height=innerHeight;
+    const img=ctx.createImageData(c.width,c.height);
+    for(let i=0;i<img.data.length;i+=4){
+      const v=Math.random()*255|0;
+      img.data[i]=img.data[i+1]=img.data[i+2]=v;
+      img.data[i+3]=255;
+    }
+    ctx.putImageData(img,0,0);
+  }
+  draw();
+  setInterval(draw,80);
+  window.addEventListener('resize',draw);
+})();
+</script>
+</body>
+</html>
