@@ -35,5 +35,4 @@ https://oceandepths.netlify.app/
 - Accessibility improvements
 
 ## Author
-
-Krishna Vamshi
+**Yuva Keerthi**
